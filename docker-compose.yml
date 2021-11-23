@@ -1,0 +1,90 @@
+version: '3.5'
+
+services:
+  rms_app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: rms_app 
+    restart: unless-stopped
+    ports: 
+      - 9005:9000
+    depends_on:
+      - pgdb
+    environment: 
+      DATABASE_URL: "postgresql://dbuser:postgres@127.0.0.1:5432/rms"    
+    volumes:
+      # - composer:/var/www/.composer
+      # - /app/var/cache
+      # - /app/var/logs
+      - ./:/var/www
+
+      
+  nginx_webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile_nginx
+    container_name: nginx_webserver
+    restart: unless-stopped
+    ports: 
+      - 8083:80
+    volumes: 
+      - ./:/var/www
+      - ./config/nginx/:/etc/nginx/conf.d/
+    
+    depends_on:
+      - rms_app
+
+  # varnish:
+    # build: 
+      # context: .
+      # dockerfile: Dockerfile_varnish
+    # container_name: varnish
+    # ports:
+      # - "8083:80"
+    # depends_on:
+      # - nginx_webserver    
+
+  # varnish:
+    # build: 
+      # context: .
+      # dockerfile: Dockerfile_varnish
+    # container_name: varnish
+    # restart: unless-stopped
+    # environment:
+      # BACKEND_HOST: nginx_webserver
+      # BACKEND_PORT: 8083
+      # BAN_HOST: rms_app
+    # depends_on:
+      # - nginx_webserver
+  # angular:
+    # build: 
+      # context: .
+      # dockerfile: ./angular/Dockerfile_angular
+    # ports:
+      # - 4200:4200
+    # volumes:
+      # - ./angular:/dist
+    # depends_on:
+      # - rms_app 
+
+
+  pgdb:
+    build: 
+      context: .
+      dockerfile: Dockerfile_postgres
+    container_name: pgdb
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - 5433:5432
+    volumes:
+      # - ./data/db:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data/
+
+volumes:
+  pg_data:
+
